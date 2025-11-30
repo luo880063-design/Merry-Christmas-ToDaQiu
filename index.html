@@ -16,6 +16,9 @@
         }
         canvas {
             display: block;
+            /* 确保 CSS 尺寸占满全屏 */
+            width: 100vw;
+            height: 100vh;
         }
 
         /* --- 文字容器 --- */
@@ -56,17 +59,14 @@
         
         /* 第二行：—To 大球 */
         .sub-text {
-            /* 关键修改：混合字体栈。
-               浏览器会先用 Great Vibes 渲染英文，
-               遇到中文时自动使用 Zhi Mang Xing 渲染 */
+            /* 混合字体栈 */
             font-family: 'Great Vibes', 'Zhi Mang Xing', cursive; 
             
             color: #ffb7c5; 
-            font-size: 2.8rem; /* 因为中文花体字通常视觉上偏小，这里稍微再调大一点 */
+            font-size: 2.8rem; 
             margin-top: 5px;
             font-weight: normal;
             
-            /* 同样加上柔和的光晕 */
             text-shadow: 0 0 10px rgba(255, 192, 203, 0.8), 
                          0 0 20px rgba(255, 105, 180, 0.4);
             animation: textGlow 3s ease-in-out infinite alternate-reverse;
@@ -99,7 +99,7 @@
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
 
-    let w, h;
+    let w, h; // 逻辑宽高
     let particles = [];
     let snowParticles = [];
     let treeCenterX, treeCenterY;
@@ -118,9 +118,25 @@
     };
 
     function resize() {
-        w = canvas.width = window.innerWidth;
-        h = canvas.height = window.innerHeight;
+        // 【核心修改】高清屏适配逻辑
+        const dpr = window.devicePixelRatio || 1;
+        
+        // 获取浏览器逻辑尺寸
+        w = window.innerWidth;
+        h = window.innerHeight;
 
+        // 设置 Canvas 的物理像素尺寸（放大 dpr 倍）
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+
+        // 设置 CSS 样式尺寸（保持逻辑尺寸）
+        canvas.style.width = w + "px";
+        canvas.style.height = h + "px";
+
+        // 缩放绘图上下文，让后续绘制操作使用逻辑坐标
+        ctx.scale(dpr, dpr);
+
+        // 重新计算树的位置
         if (w > h) {
             // 电脑：树在右侧
             treeCenterX = w * 0.75;
@@ -224,6 +240,7 @@
                 ctx.fill();
                 
                 if (this.isLight && this.type === 'leaf') {
+                    // 发光效果也根据 scale 缩放，看起来更自然
                     ctx.shadowBlur = 15 * scale;
                     ctx.shadowColor = this.color;
                     ctx.fill();
@@ -283,6 +300,7 @@
     }
 
     function animate() {
+        // 清空时使用逻辑尺寸
         ctx.clearRect(0, 0, w, h);
         
         ctx.globalCompositeOperation = 'lighter'; 
